@@ -4,8 +4,8 @@ from bson.objectid import ObjectId
 
 
 app = Flask(__name__)
-app.config.from_envvar('APP_SETTINGS')
-
+app.config['MONGO_URI']='mongodb+srv://flask-todo-app:renish@cluster0.ftdrd.mongodb.net/dbtodo?retryWrites=true&w=majority'
+app.DEBUG=True
 mongo = PyMongo(app)
 
 todos = mongo.db.todos
@@ -30,10 +30,10 @@ def complete(oid):
 
 @app.route('/edit_todo/<oid>',methods=['POST'])
 def edit_todo(oid):
-    # todo_item = todos.find_one({'_id': ObjectId(oid)})
     edit_item = request.form.get('edit-todo')
+    todo_item = todos.find_one({'_id': ObjectId(oid)})
     # todo_item['text'] = edit_item
-    todos.update({'_id':ObjectId(oid)},{'text':edit_item})
+    todos.update({'_id':ObjectId(oid)},{'text':edit_item,'complete': todo_item['complete']})
     # todos.save(todo_item)
     return redirect(url_for('index'))
 
