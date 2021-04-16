@@ -1,62 +1,55 @@
-from flask import Flask,render_template,request,redirect,url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, url_for, redirect
+from flask_pymongo import PyMongo
+from bson.objectid import ObjectId
 
-app=Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///db.sqlite'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
-db=SQLAlchemy(app)
 
-class Todo(db.Model):
-    id=db.Column(db.Integer,primary_key=True)
-    title=db.Column(db.String(100))
-    complete=db.Column(db.Boolean)
+app = Flask(__name__)
+app.config.from_envvar('APP_SETTINGS')
+
+mongo = PyMongo(app)
+
+todos = mongo.db.todos
 
 @app.route('/')
 def index():
-    todo_list=Todo.query.all()
-    print(todo_list)
-    return render_template('index.html',todo_list=todo_list)
+    saved_todos=todos.find()
+    return render_template('index.html',todos=saved_todos)
 
-@app.route("/add",methods=["POST"])
-def add():
-    title=request.form.get("title")
-    new_todo=Todo(title=title,complete=False)
-    db.session.add(new_todo)
-    db.session.commit()
-    return redirect(url_for("index"))
+@app.route('/add_todo',methods=['POST'])
+def add_todo():
+    new_todo = request.form.get('add-todo')
+    todos.insert_one({'text' : new_todo, 'complete' : False})
+    return redirect(url_for('index'))
 
-@app.route("/update/<int:todo_id>")
-def update(todo_id):
-    todo=Todo.query.filter_by(id=todo_id).first()
-    todo.complete=not todo.complete
-    db.session.commit()
-    return redirect(url_for("index"))
+@app.route('/complete/<oid>')
+def complete(oid):
+    todo_item=todos.find_one({'_id':ObjectId(oid)})
+    todo_item['complete']=not todo_item['complete']
+    todos.save(todo_item)
+    return redirect(url_for('index'))
 
-@app.route("/delete/<int:todo_id>")
-def delete(todo_id):
-   todo=Todo.query.filter_by(id=todo_id).first()
-   db.session.delete(todo)
-   db.session.commit()
-   return redirect(url_for("index"))
+@app.route('/edit_todo/<oid>',methods=['POST'])
+def edit_todo(oid):
+    # todo_item = todos.find_one({'_id': ObjectId(oid)})
+    edit_item = request.form.get('edit-todo')
+    # todo_item['text'] = edit_item
+    todos.update({'_id':ObjectId(oid)},{'text':edit_item})
+    # todos.save(todo_item)
+    return redirect(url_for('index'))
 
-@app.route('/edit/<int:todo_id>',methods=["GET","POST"])
-def edit(todo_id):
-    todo=Todo.query.filter_by(id=todo_id).first()
-    if request.method == 'POST':
-        title = request.form.get("title")
-        try:
+@app.route('/delete_todo/<oid>')
+def delete_todo(oid):
+    todos.delete_many({'_id': ObjectId(oid)})
+    return redirect(url_for('index'))
 
-            num_rows_updated = Todo.query.filter_by(id=todo.id).update(dict(title=title))
+@app.route('/delete_completed')
+def delete_completed():
+    todos.delete_many({'complete':True})
+    return redirect(url_for('index'))
 
-            db.session.commit()
-            return redirect('/')
-        except:
-            return 'There was an issue while updating that task'
 
-    else:
-        return render_template('edit.html',todo_id=todo.id,title=todo.title)
+@app.route('/delete_all')
+def delete_all():
+    todos.delete_many({})
+    return redirect(url_for('index'))
 
-if __name__=="__main__":
-    db.create_all()
-
-    app.run(debug=True)

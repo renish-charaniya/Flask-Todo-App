@@ -3,37 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <title>Todo app</title>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
 <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
-</head>
+   </head>
 <body>
 <div style="margin-top:50px" class="ui container">
-<h1  class="ui center aligned header">Todo App</h1>
+<h1  class="ui center aligned header">Todo App</h1><h4 style="color:red" class="ui center aligned header ">BETA v1.0</h4>
 
-<form class="ui form" action="/add" method="post">
+<form class="ui form" action="/add_todo" method="post">
     <div class="field">
         <label for="title">Todo Title</label>
-        <input type="text" name="title" placeholder="Enter todo..">
+        <input type="text" name="add-todo" placeholder="Enter todo.." required autofocus>
         <br>
         <button class="ui blue button" type="submit">ADD</button>
+         <a class="ui red button" style="float:right" href="/delete_all">Delete ALL</a>
+         <a class="ui orange button" style="float:right" href="/delete_completed">Delete Completed</a>
+
+
     </div>
 </form>
 
-{%  for todo in todo_list %}
+
+{%  for todo in todos %}
 <div class="ui segment">
-    <p class="ui big header">{{todo.id}} | {{todo.title}}</p>
-    {% if todo.complete==False%}
-        <span class="ui gray label">Not Complete</span>
+    <p class="ui big header">{{todo.text}}</p>
+
+    {% if todo.complete %}
+    <span class="ui green label">Completed</span>
+        <a class="ui blue button" href="/complete/{{todo._id}}">Un-Done</a>
     {% else %}
-        <span class="ui green label">Completed</span>
-    {% endif%}
+    <span class="ui gray label">Not Complete</span>
+         <a class="ui purple button" href="/complete/{{todo._id}}">Done</a>
+     {% endif %}
+        <a class="ui yellow button tododata" name="edit" id="edit" data-toggle="modal" data-id={{todo._id}} data-edit_value={{todo.text}} data-target="#myModal" href="">Edit</a>
 
-    <a class="ui yellow button" href="/edit/{{todo.id}}">Edit</a>
+     <a class="ui red button" href="/delete_todo/{{todo._id}}">Delete</a>
+    </div>
 
-    <a class="ui blue button" href="/update/{{todo.id}}">Done</a>
-    <a class="ui red button" href="/delete/{{todo.id}}">Delete</a>
+
+    {% endfor %}
 </div>
-{% endfor %}
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Update Task</h4>
+      </div>
+      <div class="modal-body">
+         <form id="form_edit_todo" action="" method="post">
+          <div class="form-group">
+            <label for="edit_todo" class="control-label">Edit Todo:</label>
+            <input type="text" class="form-control" name="edit-todo" id="edit_todo" value="">
+          </div>
+
+
+      </div>
+      <div class="modal-footer">
+
+          <button type="submit" class="btn btn-primary">Save changes</button>
+              </form>
+      </div>
+    </div>
+  </div>
 </div>
+
+
+ <script>
+        $(document).ready(function() {
+
+            $(".tododata").click(function(){
+            var edit_todo_id=$(this).data("id");
+            var edit_todo_text=$(this).data("edit_value");
+            $('#edit_todo').val(edit_todo_text);
+            $('#form_edit_todo').attr("action", "/edit_todo/"+edit_todo_id);
+
+            });
+        });
+    </script>
 </body>
 </html>
